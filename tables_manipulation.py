@@ -28,10 +28,12 @@ def connect_database():
 def add_book(id, author, title, status):
 
     cur = connection.cursor()
-    cur.execute("SELECT * FROM books WHERE id = %s",(id))
+    #cur.execute("SELECT * FROM books WHERE id = %s",(id))
 
-    cur.execute( "INSERT INTO books(book_id, author, title, status) VALUES (%s,%s,%s,%s)", (id, author, title, status) )
-
+    try:
+        cur.execute( "INSERT INTO books(book_id, author, title, status) VALUES (%s,%s,%s,%s)", (id, author, title, status) )
+    except:
+        print("the id is already present")
     connection.commit()
     cur.close()
 
@@ -86,6 +88,11 @@ def print_issued_books():
 
     return
 def return_book(id):
+    cursor = connection.cursor()
+    cursor.execute("UPDATE books SET status = 'Available' WHERE book_id= %s", (id,))
+
+    connection.commit()
+    cursor.close()
 
     return
 

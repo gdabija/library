@@ -1,5 +1,5 @@
 import tables_manipulation as db
-import design_backround
+from design_backround import *
 
 
 db.connect_database()
