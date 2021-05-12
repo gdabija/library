@@ -1,7 +1,9 @@
 import psycopg2
-list_id = []
-def connect_database():
 
+list_id = []
+
+
+def connect_database():
     global connection
     DB_NAME = "db_books"
     DB_USER = "postgres"
@@ -26,78 +28,80 @@ def connect_database():
 
 
 def add_book(id, author, title, status):
-
     cur = connection.cursor()
-    #cur.execute("SELECT * FROM books WHERE id = %s",(id))
+    cur.execute( "SELECT * FROM books  WHERE book_id = %s", (id,) )
 
-    try:
-        cur.execute( "INSERT INTO books(book_id, author, title, status) VALUES (%s,%s,%s,%s)", (id, author, title, status) )
-    except:
-        print("the id is already present")
-    connection.commit()
-    cur.close()
+    data = cur.fetchall()
+    if data:
+        print( "The following book is already present" )
+        connection.commit()
+        cur.close()
+        return False
+    else:
+        cur.execute( "INSERT INTO books(book_id, author, title, status) VALUES (%s,%s,%s,%s)",
+                     (id, author, title, status) )
 
-    return
+        connection.commit()
+        cur.close()
+
+    return True
 
 
 def delete_book(id):
     cursor = connection.cursor()
-    cursor.execute( "DELETE FROM books WHERE book_id = %s", (id,))
-
+    try:
+        cursor.execute( "DELETE FROM books WHERE book_id = %s", (id,) )
+    except:
+        connection.commit()
+        cursor.close()
+        return False
     connection.commit()
     cursor.close()
 
-    return
+    return True
 
 
-def issue_book(id, book_id):
+def issue_book(code, book_id):
     cursor = connection.cursor()
-    cursor.execute("INSERT INTO books_issued(issued_code, book_id) VALUES (%s,%s)",(id, book_id,))
-    cursor.execute("UPDATE books SET status = 'issued' WHERE book_id= %s", (book_id,))
+    try:
+        cursor.execute( "INSERT INTO books_issued(issued_code, book_id) VALUES (%s,%s)", (code, book_id,) )
+        cursor.execute( "UPDATE books SET status = 'issued' WHERE book_id= %s", (book_id,) )
+    except:
+        connection.commit()
+        cursor.close()
+        return False
 
     connection.commit()
     cursor.close()
-    return
+    return True
 
-def print_available_books():
+
+def print_books():
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM books  WHERE status = 'Available'")
+    cursor.execute( "SELECT * FROM books" )
 
     data = cursor.fetchall()
 
-
     cursor.close()
-    print("Available books:")
-    for row in data:
-        print(row)
 
-    return
-
-def print_issued_books():
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM books  WHERE status = 'issued'")
-
-    data = cursor.fetchall()
+    return data
 
 
-    cursor.close()
-    print("Issued books:")
-    for row in data:
-
-        print(row)
-
-    return
 def return_book(id):
     cursor = connection.cursor()
-    cursor.execute("UPDATE books SET status = 'Available' WHERE book_id= %s", (id,))
-
+    try:
+        cursor.execute( "UPDATE books SET status = 'Available' WHERE book_id= %s", (id,) )
+        cursor.execute( "DELETE FROM books_issued WHERE book_id = %s", (id,) )
+    except:
+        connection.commit()
+        cursor.close()
+        return False
     connection.commit()
     cursor.close()
 
-    return
+    return True
 
 
 def close_connection():
-
     connection.close()
     return
